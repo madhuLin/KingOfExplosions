@@ -18,12 +18,13 @@ namespace KingOfExplosions.GameElement
 
         public int W { get; set; }
         public int H { get; set; }
+
+        protected string path = System.Environment.CurrentDirectory + "\\Img\\";
     }
 
     // 炸彈類
     public class Bomb : GameElement
     {
-        private string path = System.Environment.CurrentDirectory + "\\Img\\";
         private int V;
         private bool type = true;
         private System.Threading.Timer timer;
@@ -147,17 +148,23 @@ namespace KingOfExplosions.GameElement
     // 箱子類
     public class Box : GameElement
     {
-        private string path = System.Environment.CurrentDirectory + "\\Img\\";
-        public bool IsOpen { get; set; }
+        int[] Probability = {-1,3,6, 6,4,5};
 
         public Box(int x, int y, Panel panel)
         {
             X = x;
             Y = y;
-            IsOpen = false;
             W = 50;
             H = 50;
             InitPic();
+        }
+
+        public int getProp()
+        {
+            Random random = new Random();
+            int num = random.Next(Probability.Length);
+            Console.WriteLine(num);
+            return Probability[num];
         }
         private void InitPic()
         {
@@ -170,7 +177,6 @@ namespace KingOfExplosions.GameElement
         public void Open()
         {
             // 開啟箱子的邏輯
-            IsOpen = true;
             Console.WriteLine("Box opened!");
         }
     }
@@ -178,7 +184,6 @@ namespace KingOfExplosions.GameElement
     // 障礙物類
     public class Obstacle : GameElement
     {
-        private string path = System.Environment.CurrentDirectory + "\\Img\\";
         public Obstacle(int x, int y)
         {
             X = x;
@@ -201,6 +206,44 @@ namespace KingOfExplosions.GameElement
         {
             // 障礙物的邏輯
             Console.WriteLine("Obstacle blocking the way!");
+        }
+    }
+
+    public class Prop : GameElement
+    {
+        public int type { get; set; }
+        public double ratio = 1.6;
+        public Prop(int x, int y, int type)
+        {
+            X = x;
+            Y = y;
+            W = 50;
+            H = 50;
+            this.type = type;
+            InitPic();
+        }
+
+        private void InitPic() 
+        {
+            Pc = new PictureBox();
+            Pc.SizeMode = PictureBoxSizeMode.StretchImage;
+            Pc.BackColor = Color.Transparent;
+            Pc.SetBounds(X, Y, W, H);
+            switch(type)
+            {
+                case 3:
+                    Pc.Image = Image.FromFile(path + "run.png");
+                    break;
+                case 4:
+                    Pc.Image = Image.FromFile(path + "Protect.png");
+                    break;
+                case 5:
+                    Pc.Image = Image.FromFile(path + "banana.png");
+                    break;
+                case 6:
+                    Pc.Image = Image.FromFile(path + "power.png");
+                    break;
+            }
         }
     }
 }
