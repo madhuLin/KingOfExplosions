@@ -88,5 +88,19 @@
     <None Include="Resources\p1.jpg" />
     <None Include="Resources\floor.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Img\background.png" />
+    <Content Include="Img\banana.png" />
+    <Content Include="Img\bom.png" />
+    <Content Include="Img\box.png" />
+    <Content Include="Img\explosion.png" />
+    <Content Include="Img\floor.png" />
+    <Content Include="Img\p1.jpg" />
+    <Content Include="Img\p2.png" />
+    <Content Include="Img\power.png" />
+    <Content Include="Img\Protect.png" />
+    <Content Include="Img\run.png" />
+    <Content Include="Img\wall.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

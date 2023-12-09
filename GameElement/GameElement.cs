@@ -19,7 +19,7 @@ namespace KingOfExplosions.GameElement
         public int W { get; set; }
         public int H { get; set; }
 
-        protected string path = System.Environment.CurrentDirectory + "\\Img\\";
+        protected string path = System.Environment.CurrentDirectory;
     }
 
     // 炸彈類
@@ -35,6 +35,7 @@ namespace KingOfExplosions.GameElement
 
         public Bomb(int x, int y, Panel panel)
         {
+            path = path.Substring(0, path.IndexOf("bin")) + "img\\";
             X = x;
             Y = y;
             W = 40;
@@ -152,6 +153,7 @@ namespace KingOfExplosions.GameElement
 
         public Box(int x, int y, Panel panel)
         {
+            path = path.Substring(0, path.IndexOf("bin")) + "img\\";
             X = x;
             Y = y;
             W = 50;
@@ -186,6 +188,7 @@ namespace KingOfExplosions.GameElement
     {
         public Obstacle(int x, int y)
         {
+            path = path.Substring(0, path.IndexOf("bin")) + "img\\";
             X = x;
             Y = y;
             W = 50;
@@ -215,6 +218,7 @@ namespace KingOfExplosions.GameElement
         public double ratio = 1.6;
         public Prop(int x, int y, int type)
         {
+            path = path.Substring(0, path.IndexOf("bin")) + "img\\";
             X = x;
             Y = y;
             W = 50;

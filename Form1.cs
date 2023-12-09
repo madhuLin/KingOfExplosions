@@ -23,7 +23,7 @@ namespace KingOfExplosions
         //buttonFocus.Select();
         }
         const int baseL = 50, N = 10;
-        private string path = System.Environment.CurrentDirectory + "\\";
+        private string path = System.Environment.CurrentDirectory;
         double runningSpeedBase = 5, runningSpeedRatio = 1;
         int[][] arr = new int[N][];
         Box[, ] arrBox = new Box[N, N];
@@ -32,6 +32,7 @@ namespace KingOfExplosions
 
         private void Init()
         {
+            path = path.Substring(0, path.IndexOf("bin"));
             pictureBox1P.SizeMode = PictureBoxSizeMode.StretchImage;
             pictureBox2P.SizeMode = PictureBoxSizeMode.StretchImage;
             pictureBox1P.Image = imageList1.Images[2];
@@ -82,7 +83,6 @@ namespace KingOfExplosions
         {
             Init();
             PictureBox[][] pictureBoxes = new PictureBox[10][];
-            
             // 設定背景圖像的顯示模式
             panel1.BackgroundImageLayout = ImageLayout.Stretch;
             listBox1.Items.Add(panel1.Width + " "+panel1.Height);
