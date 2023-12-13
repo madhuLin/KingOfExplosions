@@ -5,11 +5,14 @@ using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net.Sockets;
+using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using KingOfExplosions.GameElement;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace KingOfExplosions
 {
@@ -29,7 +32,9 @@ namespace KingOfExplosions
         Box[, ] arrBox = new Box[N, N];
         Prop[,] arrProp = new Prop[N, N];
         bool walking = true;
-
+        Socket T;                                    //通訊物件
+        Thread Th;                                   //網路監聽執行緒
+        String User;
         private void Init()
         {
             path = path.Substring(0, path.IndexOf("bin"));
@@ -39,7 +44,7 @@ namespace KingOfExplosions
             pictureBox2P.Image = imageList1.Images[3];
             panel1.Controls.Add(pictureBox1P);
             panel1.Controls.Add(pictureBox2P);
-            panel1.SetBounds(20, 20, 500, 500);
+            //panel1.SetBounds(20, 20, 500, 500);
 
             if (File.Exists(path + "Terrain.txt"))
             {
@@ -139,25 +144,47 @@ namespace KingOfExplosions
             }
                 return true;
         }
+        void buildMoveData(Data data, int type, string user, int x, int y)
+        {
+            if(type > 0) data.Action = "MOVE";
+            else data.Action = "BOMB";
+            data.Position = new Tuple<int,int> (x, y);
+        }
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
             if (!walking) return;
             int distance = (int)(runningSpeedBase * runningSpeedRatio);
             //if (play == false) return;
+            Data data = new Data();
+            bool keyT = true;
             switch (e.KeyCode)
             {
                 case Keys.A:
-                    if (pictureBox1P.Left >= 0 && cnaWalk(pictureBox1P.Left-5, pictureBox1P.Top)) pictureBox1P.Left -= distance; //左移
+                    if (pictureBox1P.Left >= 0 && cnaWalk(pictureBox1P.Left - 5, pictureBox1P.Top)) {
+                        pictureBox1P.Left -= distance; //左移
+                        buildMoveData(data, 1, User,pictureBox1P.Left, pictureBox1P.Top);
+                    }
                     
                     break;
                 case Keys.D:
-                    if (pictureBox1P.Right < panel1.Width && cnaWalk(pictureBox1P.Left+ 5, pictureBox1P.Top)) pictureBox1P.Left += distance; //右移
+                    if (pictureBox1P.Right < panel1.Width && cnaWalk(pictureBox1P.Left + 5, pictureBox1P.Top)) {
+                        pictureBox1P.Left += distance; //右移
+                        buildMoveData(data, 1, User, pictureBox1P.Left, pictureBox1P.Top);
+                    } 
                     break;
                 case Keys.W:
-                    if (pictureBox1P.Top >= 0 && cnaWalk(pictureBox1P.Left, pictureBox1P.Top-5)) pictureBox1P.Top -= distance; //上移
+                    if (pictureBox1P.Top >= 0 && cnaWalk(pictureBox1P.Left, pictureBox1P.Top - 5)) {
+                        pictureBox1P.Top -= distance; //上移
+                        buildMoveData(data, 1, User, pictureBox1P.Left, pictureBox1P.Top);
+                    }
+                    
                     break;
                 case Keys.S:
-                    if(pictureBox1P.Bottom < panel1.Height && cnaWalk(pictureBox1P.Left, pictureBox1P.Top + 5)) pictureBox1P.Top += distance; //下移
+                    if (pictureBox1P.Bottom < panel1.Height && cnaWalk(pictureBox1P.Left, pictureBox1P.Top + 5))
+                    {
+                        pictureBox1P.Top += distance; //下移
+                        buildMoveData(data, 1, User, pictureBox1P.Left, pictureBox1P.Top);
+                    } 
                     break;
                 case Keys.Space:
 
@@ -166,9 +193,13 @@ namespace KingOfExplosions
                     bomb.Exploded += BombExploded;
                     listBox1.Items.Add(bomb.Pc.Location);
                     panel1.Controls.Add(bomb.Pc);
-                    
+                    buildMoveData(data, 0, User, pictureBox1P.Left, pictureBox1P.Top);
+                    break;
+                default:
+                    keyT = false;
                     break;
             }
+            if (keyT) Send();
             buttonFocus.Select();
         }
 
@@ -231,6 +262,32 @@ namespace KingOfExplosions
         int V;
         private System.Threading.Timer timer;
         private object lockObject = new object();
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            Control.CheckForIllegalCrossThreadCalls = false; //忽略跨執行緒操作的錯誤
+            String User;
+            User = "A";                            //使用者名稱
+            string IP = "127.0.0.1";                   //伺服器IP
+            int Port = int.Parse("2019");             //伺服器Port
+            try
+            {
+                IPEndPoint EP = new IPEndPoint(IPAddress.Parse(IP), Port);          //建立伺服器端點資訊
+                //建立TCP通訊物件
+                T = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                T.Connect(EP);           //連上Server的EP端點(類似撥號連線)
+                Th = new Thread(Listen); //建立監聽執行緒
+                Th.IsBackground = true;  //設定為背景執行緒
+                Th.Start();              //開始監聽
+                textBox1.Text = "A已連線伺服器！" + "\r\n";
+                Send("0" + User);        //隨即傳送自己的 UserName 給 Server
+            }
+            catch
+            {
+                textBox1.Text = "無法連上伺服器！" + "\r\n";  //連線失敗時顯示訊息
+            }
+        }
+
         private void reciprocal(int t, int type)
         {
             V = t;
@@ -267,6 +324,80 @@ namespace KingOfExplosions
                 }
                 
             }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            Control.CheckForIllegalCrossThreadCalls = false; //忽略跨執行緒操作的錯誤
+            String User;
+            User = "B";                            //使用者名稱
+            string IP = "127.0.0.1";                   //伺服器IP
+            int Port = int.Parse("2019");             //伺服器Port
+            try
+            {
+                IPEndPoint EP = new IPEndPoint(IPAddress.Parse(IP), Port);          //建立伺服器端點資訊
+                //建立TCP通訊物件
+                T = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                T.Connect(EP);           //連上Server的EP端點(類似撥號連線)
+                Th = new Thread(Listen); //建立監聽執行緒
+                Th.IsBackground = true;  //設定為背景執行緒
+                Th.Start();              //開始監聽
+                textBox1.Text = "B已連線伺服器！" + "\r\n";
+                Send("0" + User);        //隨即傳送自己的 UserName 給 Server
+            }
+            catch
+            {
+                textBox1.Text = "無法連上伺服器！" + "\r\n";  //連線失敗時顯示訊息
+            }
+        }
+
+
+        //監聽 Server 訊息 (Listening to the Server)
+        private void Listen()
+        {
+            EndPoint ServerEP = (EndPoint)T.RemoteEndPoint; //Server 的 EndPoint
+            byte[] B = new byte[1023];                      //接收用的 Byte 陣列
+            int inLen = 0;                                  //接收的位元組數目
+            string Msg;                                     //接收到的完整訊息
+            string St;                                      //命令碼
+            string Str;                                     //訊息內容(不含命令碼)
+            while (true)                                    //無限次監聽迴圈
+            {
+                try
+                {
+                    inLen = T.ReceiveFrom(B, ref ServerEP); //收聽資訊並取得位元組數
+                }
+                catch (Exception)
+                {
+                    T.Close();                                 //關閉通訊器
+                    MessageBox.Show("伺服器斷線了！");         //顯示斷線
+                    button1.Enabled = true;                    //連線按鍵恢復可用
+                    Th.Abort();                                //刪除執行緒
+                }
+                Msg = Encoding.Default.GetString(B, 0, inLen); //解讀完整訊息
+                St = Msg.Substring(0, 1);                      //取出命令碼 (第一個字)
+                Str = Msg.Substring(1);                        //取出命令碼之後的訊息
+                listBox1.Items.Add("Msg:" + Msg);
+                switch (St)                                    //依命令碼執行功能
+                {
+
+                }
+            }
+        }
+
+        private void Send(string Str)
+        {
+            byte[] B = Encoding.Default.GetBytes(Str); //翻譯文字成Byte陣列
+            try
+            {
+                T.Send(B, 0, B.Length, SocketFlags.None);  //傳送訊息給伺服器
+            }
+            catch (Exception ex)
+            {
+                // Handle exception (log, display, etc.)
+                MessageBox.Show("An error occurred: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
         }
     }
 }
