@@ -46,6 +46,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Data.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -95,12 +96,14 @@
     <Content Include="Img\box.png" />
     <Content Include="Img\explosion.png" />
     <Content Include="Img\floor.png" />
+    <Content Include="Img\love.png" />
     <Content Include="Img\p1.jpg" />
     <Content Include="Img\p2.png" />
     <Content Include="Img\power.png" />
     <Content Include="Img\Protect.png" />
     <Content Include="Img\run.png" />
     <Content Include="Img\wall.png" />
+    <None Include="Resources\love1.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
