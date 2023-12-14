@@ -12,8 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using KingOfExplosions.GameElement;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-
+using Newtonsoft.Json;
 namespace KingOfExplosions
 {
 
@@ -35,6 +34,18 @@ namespace KingOfExplosions
         Socket T;                                    //通訊物件
         Thread Th;                                   //網路監聽執行緒
         String User;
+        DataUser dataUser;
+        PictureBox pictureBoxSelf;
+        Dictionary<int, PictureBox> userPictureName = new Dictionary<int, PictureBox>();
+        private void InitTmp(int num, string user, string picname)
+        {
+            dataUser = new DataUser();
+            dataUser.UserNumber = num;
+            dataUser.User = user;
+            dataUser.PicName = picname;
+            if (num == 1) pictureBoxSelf = pictureBox1P;
+            else if(num == 2) pictureBoxSelf = pictureBox2P;
+        }
         private void Init()
         {
             path = path.Substring(0, path.IndexOf("bin"));
@@ -44,6 +55,10 @@ namespace KingOfExplosions
             pictureBox2P.Image = imageList1.Images[3];
             panel1.Controls.Add(pictureBox1P);
             panel1.Controls.Add(pictureBox2P);
+
+            userPictureName.Add(1, pictureBox1P);
+            userPictureName.Add(2, pictureBox2P);
+
             //panel1.SetBounds(20, 20, 500, 500);
 
             if (File.Exists(path + "Terrain.txt"))
@@ -90,7 +105,7 @@ namespace KingOfExplosions
             PictureBox[][] pictureBoxes = new PictureBox[10][];
             // 設定背景圖像的顯示模式
             panel1.BackgroundImageLayout = ImageLayout.Stretch;
-            listBox1.Items.Add(panel1.Width + " "+panel1.Height);
+            //listBox1.Items.Add(panel1.Width + " "+panel1.Height);
             
         }
 
@@ -101,105 +116,126 @@ namespace KingOfExplosions
             //listBox1.Items.Add("BombExploded");
             CheckBom(bomb.X, bomb.Y);
         }
-        private bool cnaWalk(int x, int y)
-        {
-            for (int i = y/50; i < Math.Min(y / 50 + 2, N); i++)
-            {
-                for (int j = x / 50; j < Math.Min(x/50+2,N); j++)
-                {
-                    if (arr[i][j] == 1 || arr[i][j] == 2)
-                    {
-                        int xW = j * baseL, yW = i * baseL;
-                        if (x > xW && x < xW + 50 && y > yW && y < yW + 50) return false;
-                        if (x > xW && x  < xW + 50 && y + 40 > yW && y + 40 < yW + 50) return false;
-                        if (x+40 > xW && x +40< xW + 50 && y > yW && y < yW + 50) return false;
-                        if (x+40 > xW && x +40< xW + 50 && y+40 > yW && y+40 < yW + 50) return false;
-                    }
-                }
-            }
-            int r = (y + 20) / 50, c = (x+20) / 50;
-            if (arr[r][c] >= 3)
-            {
-                Prop prop = arrProp[r,c];
-                panel1.Controls.Remove(prop.Pc);
-                int type = prop.type;
-                switch (prop.type)
-                {
-                    case 3:
-                        runningSpeedRatio = prop.ratio;
-                        reciprocal(70, type);
-                        break;
-                    case 4:
-                        
-                        break;
-                    case 5:
-                        walking = false;
-                        reciprocal(15, type);
-                        break;
-                    case 6:
+        //private bool cnaWalk(int x, int y)
+        //{
+        //    for (int i = y/50; i < Math.Min(y / 50 + 2, N); i++)
+        //    {
+        //        for (int j = x / 50; j < Math.Min(x/50+2,N); j++)
+        //        {
+        //            if (arr[i][j] == 1 || arr[i][j] == 2)
+        //            {
+        //                int xW = j * baseL, yW = i * baseL;
+        //                if (x > xW && x < xW + 50 && y > yW && y < yW + 50) return false;
+        //                if (x > xW && x  < xW + 50 && y + 40 > yW && y + 40 < yW + 50) return false;
+        //                if (x+40 > xW && x +40< xW + 50 && y > yW && y < yW + 50) return false;
+        //                if (x+40 > xW && x +40< xW + 50 && y+40 > yW && y+40 < yW + 50) return false;
+        //            }
+        //        }
+        //    }
+        //    int r = (y + 20) / 50, c = (x+20) / 50;
+        //    if (arr[r][c] >= 3)
+        //    {
+        //        Prop prop = arrProp[r,c];
+        //        panel1.Controls.Remove(prop.Pc);
+        //        int type = prop.type;
+        //        switch (prop.type)
+        //        {
+        //            case 3:
+        //                runningSpeedRatio = prop.ratio;
+        //                reciprocal(70, type);
+        //                break;
+        //            case 4:
 
-                        break;
-                }
-                arr[r][c] = 0;
-            }
-                return true;
-        }
-        void buildMoveData(Data data, int type, string user, int x, int y)
+        //                break;
+        //            case 5:
+        //                walking = false;
+        //                reciprocal(15, type);
+        //                break;
+        //            case 6:
+
+        //                break;
+        //        }
+        //        arr[r][c] = 0;
+        //    }
+        //        return true;
+        //}
+
+        bool canWalkFlag = false, canWalkServer = false;
+        private async Task CheckCanWalkResult()
         {
-            if(type > 0) data.Action = "MOVE";
+            // 等待canWalkFlag為true，表示已經收到伺服器端的結果
+            while (!canWalkFlag)
+            {
+                await Task.Delay(10); // 避免無窮迴圈造成CPU高佔用，可以根據實際情況調整等待時間
+            }
+        }
+
+        private async Task<bool> canWalk(DataGame data)
+        {
+            Send("J" + data);
+            await CheckCanWalkResult(); // 等待伺服器端結果
+            return canWalkServer;
+        }
+        void buildMoveData(DataGame data, int type, int x, int y)
+        {
+            data.UserNumber = dataUser.UserNumber;
+            if (type == 0) data.Action = "WALK";
+            else if (type == 1) data.Action = "MOVE";
             else data.Action = "BOMB";
             data.Position = new Tuple<int,int> (x, y);
         }
-        private void Form1_KeyDown(object sender, KeyEventArgs e)
+        private async void Form1_KeyDown(object sender, KeyEventArgs e)
         {
             if (!walking) return;
             int distance = (int)(runningSpeedBase * runningSpeedRatio);
             //if (play == false) return;
-            Data data = new Data();
+            DataGame data = new DataGame();
             bool keyT = true;
             switch (e.KeyCode)
             {
                 case Keys.A:
-                    if (pictureBox1P.Left >= 0 && cnaWalk(pictureBox1P.Left - 5, pictureBox1P.Top)) {
-                        pictureBox1P.Left -= distance; //左移
-                        buildMoveData(data, 1, User,pictureBox1P.Left, pictureBox1P.Top);
+                    if (pictureBoxSelf.Left >= 0) {
+                        buildMoveData(data, 0, pictureBoxSelf.Left - distance, pictureBoxSelf.Top);
+                        if (await canWalk(data)) pictureBoxSelf.Left -= distance; //左移
                     }
                     
                     break;
                 case Keys.D:
-                    if (pictureBox1P.Right < panel1.Width && cnaWalk(pictureBox1P.Left + 5, pictureBox1P.Top)) {
-                        pictureBox1P.Left += distance; //右移
-                        buildMoveData(data, 1, User, pictureBox1P.Left, pictureBox1P.Top);
+                    if (pictureBoxSelf.Right < panel1.Width) {
+                        buildMoveData(data, 0, pictureBoxSelf.Left+ distance, pictureBoxSelf.Top);
+                        if (await canWalk(data)) pictureBoxSelf.Left += distance; //右移
+                        
                     } 
                     break;
                 case Keys.W:
-                    if (pictureBox1P.Top >= 0 && cnaWalk(pictureBox1P.Left, pictureBox1P.Top - 5)) {
-                        pictureBox1P.Top -= distance; //上移
-                        buildMoveData(data, 1, User, pictureBox1P.Left, pictureBox1P.Top);
+                    if (pictureBoxSelf.Top >= 0) {
+                        buildMoveData(data, 1, pictureBoxSelf.Left, pictureBoxSelf.Top- distance);
+                        if (await canWalk(data)) pictureBoxSelf.Top -= distance; //上移
                     }
                     
                     break;
                 case Keys.S:
-                    if (pictureBox1P.Bottom < panel1.Height && cnaWalk(pictureBox1P.Left, pictureBox1P.Top + 5))
+                    if (pictureBoxSelf.Bottom < panel1.Height)
                     {
-                        pictureBox1P.Top += distance; //下移
-                        buildMoveData(data, 1, User, pictureBox1P.Left, pictureBox1P.Top);
+                        buildMoveData(data, 1, pictureBoxSelf.Left, pictureBoxSelf.Top+ distance);
+                        if (await canWalk(data)) pictureBoxSelf.Top += distance; //下移
                     } 
                     break;
                 case Keys.Space:
 
-                    listBox1.Items.Add(pictureBox1P.Left + "   " + pictureBox1P.Top);
-                    Bomb bomb = new Bomb(pictureBox1P.Left, pictureBox1P.Top, panel1);
+                    listBox1.Items.Add(pictureBoxSelf.Left + "   " + pictureBoxSelf.Top);
+                    Bomb bomb = new Bomb(pictureBoxSelf.Left, pictureBoxSelf.Top, panel1);
                     bomb.Exploded += BombExploded;
                     listBox1.Items.Add(bomb.Pc.Location);
                     panel1.Controls.Add(bomb.Pc);
-                    buildMoveData(data, 0, User, pictureBox1P.Left, pictureBox1P.Top);
+                    buildMoveData(data, 0, pictureBoxSelf.Left, pictureBoxSelf.Top);
                     break;
                 default:
                     keyT = false;
                     break;
             }
-            if (keyT) Send();
+            string json = JsonConvert.SerializeObject(data);
+            //if (keyT) Send("J"+ json);
             buttonFocus.Select();
         }
 
@@ -266,7 +302,6 @@ namespace KingOfExplosions
         private void button1_Click(object sender, EventArgs e)
         {
             Control.CheckForIllegalCrossThreadCalls = false; //忽略跨執行緒操作的錯誤
-            String User;
             User = "A";                            //使用者名稱
             string IP = "127.0.0.1";                   //伺服器IP
             int Port = int.Parse("2019");             //伺服器Port
@@ -286,6 +321,8 @@ namespace KingOfExplosions
             {
                 textBox1.Text = "無法連上伺服器！" + "\r\n";  //連線失敗時顯示訊息
             }
+
+            InitTmp(1, "A", "p1.jpg");
         }
 
         private void reciprocal(int t, int type)
@@ -349,7 +386,23 @@ namespace KingOfExplosions
             {
                 textBox1.Text = "無法連上伺服器！" + "\r\n";  //連線失敗時顯示訊息
             }
+            InitTmp(2, "B", "p2.png");
         }
+
+        private void GameAction(DataGame data)
+        {
+            switch (data.Action)
+            {
+                case "MOVE":
+                    //listBox1.Items.Add("MOVE:" + data);
+                    PictureBox picturebox = userPictureName[data.UserNumber];
+                    picturebox.Left = data.Position.Item1;
+                    picturebox.Top = data.Position.Item2;
+                    break;
+
+            }
+        }
+
 
 
         //監聽 Server 訊息 (Listening to the Server)
@@ -377,13 +430,23 @@ namespace KingOfExplosions
                 Msg = Encoding.Default.GetString(B, 0, inLen); //解讀完整訊息
                 St = Msg.Substring(0, 1);                      //取出命令碼 (第一個字)
                 Str = Msg.Substring(1);                        //取出命令碼之後的訊息
-                listBox1.Items.Add("Msg:" + Msg);
+                //listBox1.Items.Add("Msg:" + Msg);
                 switch (St)                                    //依命令碼執行功能
                 {
-
+                    case "J":
+                        DataGame data = JsonConvert.DeserializeObject<DataGame>(Str);
+                        //listBox1.Items.Add("MOVE:" + data);
+                        GameAction(data);
+                        break;
+                    case "W":  //if canWalk
+                        if (Str == "WALK") canWalkServer = true;
+                        else canWalkServer = false;
+                        canWalkFlag = true;
+                        break;
                 }
             }
         }
+
 
         private void Send(string Str)
         {

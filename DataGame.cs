@@ -6,9 +6,11 @@ using System.Threading.Tasks;
 
 namespace KingOfExplosions
 {
-    public class Data
+    public class DataGame
     {
-        public int User { get; set; }
+        public int UserNumber { get; set; }
+        public string User { get; set; }
+        public String PicName { get; set; }
         public string Action { get; set; }
         public String Direction { get; set; }
 
