@@ -160,22 +160,23 @@ namespace KingOfExplosions
         //        return true;
         //}
 
-        bool canWalkFlag = false, canWalkServer = false;
-        private async Task CheckCanWalkResult()
-        {
-            // 等待canWalkFlag為true，表示已經收到伺服器端的結果
-            while (!canWalkFlag)
-            {
-                await Task.Delay(10); // 避免無窮迴圈造成CPU高佔用，可以根據實際情況調整等待時間
-            }
-        }
+        //bool canWalkFlag = false, canWalkServer = false;
+        //private async Task CheckCanWalkResult()
+        //{
+        //    // 等待canWalkFlag為true，表示已經收到伺服器端的結果
+        //    while (!canWalkFlag)
+        //    {
+        //        await Task.Delay(10); // 避免無窮迴圈造成CPU高佔用，可以根據實際情況調整等待時間
+        //    }
+        //}
 
-        private async Task<bool> canWalk(DataGame data)
-        {
-            Send("J" + data);
-            await CheckCanWalkResult(); // 等待伺服器端結果
-            return canWalkServer;
-        }
+        //private async Task<bool> canWalk(DataGame data)
+        //{
+        //    Send("J" + data);
+        //    await CheckCanWalkResult(); // 等待伺服器端結果
+        //    return canWalkServer;
+        //}
+
         void buildMoveData(DataGame data, int type, int x, int y)
         {
             data.UserNumber = dataUser.UserNumber;
@@ -184,7 +185,7 @@ namespace KingOfExplosions
             else data.Action = "BOMB";
             data.Position = new Tuple<int,int> (x, y);
         }
-        private async void Form1_KeyDown(object sender, KeyEventArgs e)
+        private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
             if (!walking) return;
             int distance = (int)(runningSpeedBase * runningSpeedRatio);
@@ -195,22 +196,22 @@ namespace KingOfExplosions
             {
                 case Keys.A:
                     if (pictureBoxSelf.Left >= 0) {
-                        buildMoveData(data, 0, pictureBoxSelf.Left - distance, pictureBoxSelf.Top);
-                        if (await canWalk(data)) pictureBoxSelf.Left -= distance; //左移
+                        buildMoveData(data, 1, pictureBoxSelf.Left - distance, pictureBoxSelf.Top);
+                        //if (await canWalk(data)) pictureBoxSelf.Left -= distance; //左移
                     }
                     
                     break;
                 case Keys.D:
                     if (pictureBoxSelf.Right < panel1.Width) {
-                        buildMoveData(data, 0, pictureBoxSelf.Left+ distance, pictureBoxSelf.Top);
-                        if (await canWalk(data)) pictureBoxSelf.Left += distance; //右移
+                        buildMoveData(data, 1, pictureBoxSelf.Left+ distance, pictureBoxSelf.Top);
+                        //if (await canWalk(data)) pictureBoxSelf.Left += distance; //右移
                         
                     } 
                     break;
                 case Keys.W:
                     if (pictureBoxSelf.Top >= 0) {
                         buildMoveData(data, 1, pictureBoxSelf.Left, pictureBoxSelf.Top- distance);
-                        if (await canWalk(data)) pictureBoxSelf.Top -= distance; //上移
+                        //if (await canWalk(data)) pictureBoxSelf.Top -= distance; //上移
                     }
                     
                     break;
@@ -218,7 +219,7 @@ namespace KingOfExplosions
                     if (pictureBoxSelf.Bottom < panel1.Height)
                     {
                         buildMoveData(data, 1, pictureBoxSelf.Left, pictureBoxSelf.Top+ distance);
-                        if (await canWalk(data)) pictureBoxSelf.Top += distance; //下移
+                        //if (await canWalk(data)) pictureBoxSelf.Top += distance; //下移
                     } 
                     break;
                 case Keys.Space:
@@ -234,8 +235,9 @@ namespace KingOfExplosions
                     keyT = false;
                     break;
             }
+            //if (keyT) await canWalk(data);
             string json = JsonConvert.SerializeObject(data);
-            //if (keyT) Send("J"+ json);
+            if (keyT) Send("J"+ json);
             buttonFocus.Select();
         }
 
@@ -438,11 +440,11 @@ namespace KingOfExplosions
                         //listBox1.Items.Add("MOVE:" + data);
                         GameAction(data);
                         break;
-                    case "W":  //if canWalk
-                        if (Str == "WALK") canWalkServer = true;
-                        else canWalkServer = false;
-                        canWalkFlag = true;
-                        break;
+                    //case "W":  //if canWalk
+                    //    if (Str == "WALK") canWalkServer = true;
+                    //    else canWalkServer = false;
+                    //    canWalkFlag = true;
+                    //    break;
                 }
             }
         }
