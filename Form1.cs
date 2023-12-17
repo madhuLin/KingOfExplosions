@@ -25,6 +25,7 @@ namespace KingOfExplosions
         //buttonFocus.Select();
         }
         const int baseL = 50, N = 10;
+        int UserNumber;
         private string path = System.Environment.CurrentDirectory;
         double runningSpeedBase = 5, runningSpeedRatio = 1;
         int[][] arr = new int[N][];
@@ -37,6 +38,7 @@ namespace KingOfExplosions
         DataUser dataUser;
         PictureBox pictureBoxSelf;
         Dictionary<int, PictureBox> userPictureName = new Dictionary<int, PictureBox>();
+        Dictionary<int, Bomb> mapBomb = new Dictionary<int, Bomb>();
         private void InitTmp(int num, string user, string picname)
         {
             dataUser = new DataUser();
@@ -111,10 +113,11 @@ namespace KingOfExplosions
 
         private void BombExploded(object sender, EventArgs e)
         {
-            Bomb bomb = (Bomb)sender;
+            //Bomb bomb = (Bomb)sender;
 
             //listBox1.Items.Add("BombExploded");
-            CheckBom(bomb.X, bomb.Y);
+            //CheckBom(bomb.X, bomb.Y);
+            //Send();
         }
         //private bool cnaWalk(int x, int y)
         //{
@@ -177,125 +180,127 @@ namespace KingOfExplosions
         //    return canWalkServer;
         //}
 
-        void buildMoveData(DataGame data, int type, int x, int y)
-        {
-            data.UserNumber = dataUser.UserNumber;
-            if (type == 0) data.Action = "WALK";
-            else if (type == 1) data.Action = "MOVE";
-            else data.Action = "BOMB";
-            data.Position = new Tuple<int,int> (x, y);
-        }
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
             if (!walking) return;
             int distance = (int)(runningSpeedBase * runningSpeedRatio);
             //if (play == false) return;
-            DataGame data = new DataGame();
-            bool keyT = true;
+            DataGame data = null;
+            bool keyT = false;
             switch (e.KeyCode)
             {
                 case Keys.A:
                     if (pictureBoxSelf.Left >= 0) {
-                        buildMoveData(data, 1, pictureBoxSelf.Left - distance, pictureBoxSelf.Top);
+                        data = new DataGame(dataUser.UserNumber, 1, pictureBoxSelf.Left - distance, pictureBoxSelf.Top);
                         //if (await canWalk(data)) pictureBoxSelf.Left -= distance; //左移
+                        keyT = true;
                     }
                     
                     break;
                 case Keys.D:
                     if (pictureBoxSelf.Right < panel1.Width) {
-                        buildMoveData(data, 1, pictureBoxSelf.Left+ distance, pictureBoxSelf.Top);
+                        data = new DataGame(dataUser.UserNumber, 1, pictureBoxSelf.Left+ distance, pictureBoxSelf.Top);
                         //if (await canWalk(data)) pictureBoxSelf.Left += distance; //右移
-                        
+                        keyT = true;
+
                     } 
                     break;
                 case Keys.W:
                     if (pictureBoxSelf.Top >= 0) {
-                        buildMoveData(data, 1, pictureBoxSelf.Left, pictureBoxSelf.Top- distance);
+                        data = new DataGame(dataUser.UserNumber, 1, pictureBoxSelf.Left, pictureBoxSelf.Top- distance);
                         //if (await canWalk(data)) pictureBoxSelf.Top -= distance; //上移
+                        keyT = true;
                     }
                     
                     break;
                 case Keys.S:
                     if (pictureBoxSelf.Bottom < panel1.Height)
                     {
-                        buildMoveData(data, 1, pictureBoxSelf.Left, pictureBoxSelf.Top+ distance);
+                        data = new DataGame(dataUser.UserNumber, 1, pictureBoxSelf.Left, pictureBoxSelf.Top+ distance);
                         //if (await canWalk(data)) pictureBoxSelf.Top += distance; //下移
+                        keyT = true;
                     } 
                     break;
                 case Keys.Space:
-
-                    listBox1.Items.Add(pictureBoxSelf.Left + "   " + pictureBoxSelf.Top);
-                    Bomb bomb = new Bomb(pictureBoxSelf.Left, pictureBoxSelf.Top, panel1);
-                    bomb.Exploded += BombExploded;
-                    listBox1.Items.Add(bomb.Pc.Location);
-                    panel1.Controls.Add(bomb.Pc);
-                    buildMoveData(data, 0, pictureBoxSelf.Left, pictureBoxSelf.Top);
+                    //Bomb bomb = new Bomb(pictureBoxSelf.Left, pictureBoxSelf.Top, panel1);
+                    //bomb.Exploded += BombExploded;
+                    //listBox1.Items.Add(bomb.Pc.Location);
+                    //panel1.Controls.Add(bomb.Pc);
+                    data = new DataGame(dataUser.UserNumber, 0, pictureBoxSelf.Left, pictureBoxSelf.Top);
+                    keyT = true;
                     break;
                 default:
                     keyT = false;
                     break;
             }
-            //if (keyT) await canWalk(data);
             string json = JsonConvert.SerializeObject(data);
-            if (keyT) Send("J"+ json);
+            if(keyT) Send("J"+ json);
             buttonFocus.Select();
         }
 
-        private void RemovePictureBox(int r, int c, Prop prop)
+        private void AddPictureBox(List<DataProp> list)
         {
-            panel1.Controls.Remove(arrBox[r, c].Pc);
-            if (prop == null) return;
-            if (panel1.InvokeRequired)
+            foreach(DataProp data in list)
             {
-                panel1.Invoke((MethodInvoker)delegate
+                int r = data.Position.Item1, c = data.Position.Item2;
+                panel1.Controls.Remove(arrBox[r, c].Pc);
+                if (data.type == 0) continue;
+                Prop prop = new Prop(c * baseL, r * baseL, data.type);
+                arrProp[r, c] = prop;
+                //if (prop == null) return;
+                if (panel1.InvokeRequired)
+                {
+                    panel1.Invoke((MethodInvoker)delegate
+                    {
+                        panel1.Controls.Add(prop.Pc);
+                    });
+                }
+                else
                 {
                     panel1.Controls.Add(prop.Pc);
-                });
-            }
-            else
-            {
-                panel1.Controls.Add(prop.Pc);
-            }
-        }
-
-        private void CheckBom(int x, int y)
-        {
-            x = (x + 20) / 50;
-            y = (y+20) / 50;
-            int[] dir = new int[] { 0,1,0,-1,0};
-            for(int d = 0; d < dir.Length-1; d++)
-            {
-                int r = y + dir[d], c = x + dir[d + 1];
-                if (r < 0 || c < 0 || r >= N || c >= N) continue;
-                if(arr[y+dir[d]][x+dir[d+1]] == 2)
-                {
-                    //listBox1.Items.Add(y.ToString() + x.ToString());
-                    int type = arrBox[r,c].getProp();
-                    arr[r][c] = 0;
-                    Console.WriteLine("type" + type.ToString());
-                    Prop prop = null;
-                    if (type != -1) 
-                    {
-                        arr[r][c] = type;
-                        prop = new Prop(c * baseL, r * baseL, type);
-                        arrProp[r, c] = prop;
-                    } 
-                    
-                    if (panel1.InvokeRequired)
-                    {
-                        // 如果不在 UI 线程上，使用 Invoke 来在 UI 线程上执行移除操作
-                        panel1.Invoke(new Action(() => RemovePictureBox(r, c, prop)));
-                    }
-                    else
-                    {
-                        // 在 UI 线程上执行移除操作
-                        panel1.Controls.Remove(arrBox[r, c].Pc);
-                        if(prop != null) panel1.Controls.Add(prop.Pc);
-                    }
-                    
                 }
             }
+
         }
+
+        //private void CheckBom(int x, int y)
+        //{
+        //    x = (x + 20) / 50;
+        //    y = (y+20) / 50;
+        //    int[] dir = new int[] { 0,1,0,-1,0};
+        //    for(int d = 0; d < dir.Length-1; d++)
+        //    {
+        //        int r = y + dir[d], c = x + dir[d + 1];
+        //        if (r < 0 || c < 0 || r >= N || c >= N) continue;
+        //        if(arr[y+dir[d]][x+dir[d+1]] == 2)
+        //        {
+        //            //listBox1.Items.Add(y.ToString() + x.ToString());
+        //            int type = arrBox[r,c].getProp();
+        //            arr[r][c] = 0;
+        //            Console.WriteLine("type" + type.ToString());
+        //            Prop prop = null;
+        //            if (type != -1) 
+        //            {
+        //                arr[r][c] = type;
+        //                prop = new Prop(c * baseL, r * baseL, type);
+        //                arrProp[r, c] = prop;
+        //            } 
+                    
+        //            if (panel1.InvokeRequired)
+        //            {
+        //                // 如果不在 UI 线程上，使用 Invoke 来在 UI 线程上执行移除操作
+        //                panel1.Invoke(new Action(() => RemovePictureBox(r, c, prop)));
+        //            }
+        //            else
+        //            {
+        //                // 在 UI 线程上执行移除操作
+        //                panel1.Controls.Remove(arrBox[r, c].Pc);
+        //                if(prop != null) panel1.Controls.Add(prop.Pc);
+        //            }
+                    
+        //        }
+        //    }
+        //}
 
         int V;
         private System.Threading.Timer timer;
@@ -305,6 +310,7 @@ namespace KingOfExplosions
         {
             Control.CheckForIllegalCrossThreadCalls = false; //忽略跨執行緒操作的錯誤
             User = "A";                            //使用者名稱
+            UserNumber = 1;
             string IP = "127.0.0.1";                   //伺服器IP
             int Port = int.Parse("2019");             //伺服器Port
             try
@@ -317,7 +323,7 @@ namespace KingOfExplosions
                 Th.IsBackground = true;  //設定為背景執行緒
                 Th.Start();              //開始監聽
                 textBox1.Text = "A已連線伺服器！" + "\r\n";
-                Send("0" + User);        //隨即傳送自己的 UserName 給 Server
+                Send("0" + UserNumber);        //隨即傳送自己的 UserName 給 Server
             }
             catch
             {
@@ -370,6 +376,7 @@ namespace KingOfExplosions
             Control.CheckForIllegalCrossThreadCalls = false; //忽略跨執行緒操作的錯誤
             String User;
             User = "B";                            //使用者名稱
+            UserNumber = 2;
             string IP = "127.0.0.1";                   //伺服器IP
             int Port = int.Parse("2019");             //伺服器Port
             try
@@ -382,13 +389,13 @@ namespace KingOfExplosions
                 Th.IsBackground = true;  //設定為背景執行緒
                 Th.Start();              //開始監聽
                 textBox1.Text = "B已連線伺服器！" + "\r\n";
-                Send("0" + User);        //隨即傳送自己的 UserName 給 Server
+                Send("0" + UserNumber);        //隨即傳送自己的 UserName 給 Server
             }
             catch
             {
                 textBox1.Text = "無法連上伺服器！" + "\r\n";  //連線失敗時顯示訊息
             }
-            InitTmp(2, "B", "p2.png");
+            InitTmp(2, "2", "p2.png");
         }
 
         private void GameAction(DataGame data)
@@ -401,11 +408,81 @@ namespace KingOfExplosions
                     picturebox.Left = data.Position.Item1;
                     picturebox.Top = data.Position.Item2;
                     break;
+                case "DROP":
+                    listBox1.Items.Add("data");
+                    Bomb bomb = new Bomb(data.Position.Item1, data.Position.Item2, panel1);
+                    if (panel1.InvokeRequired)
+                    {
+                        // 如果不在 UI 线程上，使用 Invoke 来在 UI 线程上执行增加操作
+                        panel1.Invoke((MethodInvoker)delegate { panel1.Controls.Add(bomb.Pc); });
+                        if (!mapBomb.ContainsKey(data.numberBomb)) mapBomb.Add(data.numberBomb, bomb);
+                        else mapBomb[data.numberBomb] = bomb;
+
+                    }
+                    else
+                    {
+                        // 在 UI 线程上执行增加操作
+                        panel1.Controls.Add(bomb.Pc);
+                        if (!mapBomb.ContainsKey(data.numberBomb)) mapBomb.Add(data.numberBomb, bomb);
+                        else mapBomb[data.numberBomb] = bomb;
+                    }
+                    panel1.Controls.Add(bomb.Pc);
+                    break;
+                case "PROP":
+                    panel1.Controls.Remove(arrProp[data.Position.Item1, data.Position.Item2].Pc);
+                    if (data.UserNumber != UserNumber) return;
+                    int type = data.TypeProp;
+                    switch (type)
+                    {
+                        case 3:  //加速
+                            runningSpeedRatio = 1.7;
+
+                            break;
+                        case 4: //保護
+
+                            break;
+                        case 5:  //不能動
+                            walking = false;
+                            break;
+                        case 6:
+
+                            break;
+                    }
+                    break;
+                case "PORPSOVER":
+                    DataGame dataGame = data;
+                    switch (dataGame.TypeProp)
+                    {
+                        case 3:
+                            runningSpeedRatio = 1;
+                            break;
+                        case 4:
+
+                            break;
+                        case 5:
+                            walking = true;
+                            break;
+                        case 6:
+
+                            break;
+                    }
+                    break;
 
             }
         }
 
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Send("9" + UserNumber.ToString());//傳送自己的離線訊息給伺服器
+            T.Close();       //關閉網路通訊器
+            Application.DoEvents();
+        }
 
+        private void RmIamge(object sender, EventArgs e) 
+        {
+            Tool tool = (Tool)sender;
+            panel1.Controls.Remove(mapBomb[int.Parse(tool.str)].Pc);
+        }
 
         //監聽 Server 訊息 (Listening to the Server)
         private void Listen()
@@ -430,21 +507,63 @@ namespace KingOfExplosions
                     Th.Abort();                                //刪除執行緒
                 }
                 Msg = Encoding.Default.GetString(B, 0, inLen); //解讀完整訊息
-                St = Msg.Substring(0, 1);                      //取出命令碼 (第一個字)
-                Str = Msg.Substring(1);                        //取出命令碼之後的訊息
-                //listBox1.Items.Add("Msg:" + Msg);
-                switch (St)                                    //依命令碼執行功能
+                string[] datas = Msg.Split('|');
+                foreach(string tmpstr in datas)
                 {
-                    case "J":
-                        DataGame data = JsonConvert.DeserializeObject<DataGame>(Str);
-                        //listBox1.Items.Add("MOVE:" + data);
-                        GameAction(data);
-                        break;
-                    //case "W":  //if canWalk
-                    //    if (Str == "WALK") canWalkServer = true;
-                    //    else canWalkServer = false;
-                    //    canWalkFlag = true;
-                    //    break;
+                    if (tmpstr == "") continue;
+                    Msg = tmpstr;
+                    //listBox1.Items.Add(Msg);
+                    St = Msg.Substring(0, 1);                      //取出命令碼 (第一個字)
+                    Str = Msg.Substring(1);                        //取出命令碼之後的訊息
+                                                                   //listBox1.Items.Add("Msg:" + Msg);
+                    switch (St)                                    //依命令碼執行功能
+                    {
+                        case "J":
+                            try
+                            {
+                                DataGame data = JsonConvert.DeserializeObject<DataGame>(Str);
+                                GameAction(data);
+                            }
+                            catch (Exception)
+                            {
+
+                            }
+                            break;
+                        case "D":
+                            string[] tmp = Str.Split(' ');
+                            //mapBomb[int.Parse(tmp[0])].Pc;
+                            listBox1.Items.Add(Str);
+                            List<DataProp> list = JsonConvert.DeserializeObject<List<DataProp>>(tmp[1]);
+                            Bomb bomb = mapBomb[int.Parse(tmp[0])];
+                            Tool tool = new Tool(tmp[0]);
+                            tool.Exploded += RmIamge;
+                            if (panel1.InvokeRequired)
+                            {
+                                //panel1.Controls.Remove(mapBomb[int.Parse(tmp[0])].Pc);
+                                bomb.setIamge("explosion.png");
+                                tool.reciprocal(5);
+
+                                // 如果不在 UI 线程上，使用 Invoke 来在 UI 线程上执行移除操作
+                                panel1.Invoke(new Action(() => AddPictureBox(list)));
+                            }
+                            else
+                            {
+                                //panel1.Controls.Remove(mapBomb[int.Parse(tmp[0])].Pc);
+                                // 在 UI 线程上执行移除操作
+                                AddPictureBox(list);
+                            }
+                            break;
+                        case "H":
+                            Attack attack = JsonConvert.DeserializeObject<Attack>(Str);
+
+                            GroupBox groupBox = this.Controls.Find("groupBox" + attack.UserNumber.ToString(), false).FirstOrDefault() as GroupBox;
+                            string heart = $"pictureBoxP{attack.UserNumber}Heart{attack.Heart}";
+                            PictureBox Pc = FindControl(groupBox, heart) as PictureBox;
+                            Pc.Image = Image.FromFile(path + "Img\\lovenull.png");
+
+                            break;
+
+                    }
                 }
             }
         }
@@ -463,6 +582,11 @@ namespace KingOfExplosions
                 MessageBox.Show("An error occurred: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
+        }
+        static Control FindControl(Control container, string name)
+        {
+            // 使用 LINQ 查询在 Controls 集合中查找匹配的控件
+            return container.Controls.Find(name, true).FirstOrDefault();
         }
     }
 }
