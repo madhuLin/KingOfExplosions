@@ -26,9 +26,9 @@ namespace KingOfExplosions
         }
         const int baseL = 50, N = 10;
         int UserNumber;
-        private string path = System.Environment.CurrentDirectory;
+        private string path = System.Environment.CurrentDirectory, terrain;
         double runningSpeedBase = 5, runningSpeedRatio = 1;
-        int[][] arr = new int[N][];
+        int[,] arr = new int[N,N];
         Box[, ] arrBox = new Box[N, N];
         Prop[,] arrProp = new Prop[N, N];
         bool walking = true;
@@ -45,62 +45,82 @@ namespace KingOfExplosions
             dataUser.UserNumber = num;
             dataUser.User = user;
             dataUser.PicName = picname;
-            if (num == 1) pictureBoxSelf = pictureBox1P;
-            else if(num == 2) pictureBoxSelf = pictureBox2P;
+            if (num == 1) pictureBoxSelf = pictureBoxP1;
+            else if(num == 2) pictureBoxSelf = pictureBoxP2;
+            else if(num == 3) pictureBoxSelf = pictureBoxP3;
         }
         private void Init()
         {
             path = path.Substring(0, path.IndexOf("bin"));
-            pictureBox1P.SizeMode = PictureBoxSizeMode.StretchImage;
-            pictureBox2P.SizeMode = PictureBoxSizeMode.StretchImage;
-            pictureBox1P.Image = imageList1.Images[2];
-            pictureBox2P.Image = imageList1.Images[3];
-            panel1.Controls.Add(pictureBox1P);
-            panel1.Controls.Add(pictureBox2P);
-
-            userPictureName.Add(1, pictureBox1P);
-            userPictureName.Add(2, pictureBox2P);
-
+            pictureBoxP1.SizeMode = PictureBoxSizeMode.StretchImage;
+            pictureBoxP2.SizeMode = PictureBoxSizeMode.StretchImage;
+            pictureBoxP3.SizeMode = PictureBoxSizeMode.StretchImage;
+            pictureBoxP1.Image = imageList1.Images[2];
+            pictureBoxP2.Image = imageList1.Images[3];
+            pictureBoxP3.Image = imageList1.Images[3];
+            panel1.Controls.Add(pictureBoxP1);
+            panel1.Controls.Add(pictureBoxP2);
+            panel1.Controls.Add(pictureBoxP3);
+            userPictureName.Add(1, pictureBoxP1);
+            userPictureName.Add(2, pictureBoxP2);
+            userPictureName.Add(3, pictureBoxP3);
             //panel1.SetBounds(20, 20, 500, 500);
 
-            if (File.Exists(path + "Terrain.txt"))
+        }
+        private void buildTerrain(string terrain) 
+        {
+            using (StringReader stringReader = new StringReader(terrain))
             {
-                using (StreamReader sr = new StreamReader(path + "Terrain.txt"))
+                // 逐行读取文本
+                string line;
+                int i = 0;
+                while ((line = stringReader.ReadLine()) != null)
                 {
-                    int i = 0;
-                    string line = "";
-                    while ((line = sr.ReadLine()) != null)
-                    {
-                        arr[i] = new int[10];
-                        for (int j = 0; j < line.Length; j++) arr[i][j] = line[j]-'0';
-                        i++;
-                        //listBox1.Items.Add(line);
-                    }
-                    
+                    for (int j = 0; j < line.Length; j++) arr[i,j] = line[j] - '0';
+                    i++;
                 }
             }
-            
-            for(int i = 0; i < arr.Length; i++)
+
+            for (int i = 0; i < N; i++)
             {
 
-                for(int j = 0; j < arr[i].Length; j++)
+                for (int j = 0; j < N; j++)
                 {
-                    if (arr[i][j] == 1)
+                    if (arr[i,j] == 1)
                     {
                         Obstacle obstacle = new Obstacle(j * baseL, i * baseL);
-                        panel1.Controls.Add(obstacle.Pc);
+                        if (panel1.InvokeRequired)
+                        {
+                            panel1.Invoke((MethodInvoker)delegate
+                            {
+                                panel1.Controls.Add(obstacle.Pc);
+                            });
+                        }
+                        else
+                        {
+                            panel1.Controls.Add(obstacle.Pc);
+                        }
                     }
-                    else if(arr[i][j] == 2)
+                    else if (arr[i,j] == 2)
                     {
                         Box box = new Box(j * baseL, i * baseL, panel1);
-                        panel1.Controls.Add(box.Pc);
+                        if (panel1.InvokeRequired)
+                        {
+                            panel1.Invoke((MethodInvoker)delegate
+                            {
+                                panel1.Controls.Add(box.Pc);
+                            });
+                        }
+                        else
+                        {
+                            panel1.Controls.Add(box.Pc);
+                        }
+                        
                         arrBox[i, j] = box;
                     }
                 }
             }
-
         }
-
         private void Form1_Load(object sender, EventArgs e)
         {
             Init();
@@ -400,6 +420,8 @@ namespace KingOfExplosions
 
         private void GameAction(DataGame data)
         {
+            GroupBox groupBox = this.Controls.Find("groupBox" + UserNumber.ToString(), false).FirstOrDefault() as GroupBox;
+            PictureBox Pc;
             switch (data.Action)
             {
                 case "MOVE":
@@ -436,15 +458,34 @@ namespace KingOfExplosions
                     {
                         case 3:  //加速
                             runningSpeedRatio = 1.7;
+                            
+                            string heart = $"pictureBoxP{UserNumber.ToString()}Shoe";
+                            listBox1.Items.Add(heart);
+                            Pc = groupBox.Controls.Find(heart, false).FirstOrDefault() as PictureBox;
+                            if (panel1.InvokeRequired) panel1.Invoke((MethodInvoker)delegate { Pc.Visible = true; });
+                            else Pc.Visible = true;
 
                             break;
                         case 4: //保護
-
+                            string Protect = $"pictureBoxP{UserNumber.ToString()}Protect";
+                            Pc = groupBox.Controls.Find(Protect, false).FirstOrDefault() as PictureBox;
+                            if (panel1.InvokeRequired) panel1.Invoke((MethodInvoker)delegate { Pc.Visible = true; });
+                            else Pc.Visible = true;
                             break;
                         case 5:  //不能動
                             walking = false;
                             break;
-                        case 6:
+                        case 6: //加功
+                            string attack = $"pictureBoxP{UserNumber.ToString()}Attack";
+                            Pc = groupBox.Controls.Find(attack, false).FirstOrDefault() as PictureBox;
+                            if (panel1.InvokeRequired) panel1.Invoke((MethodInvoker)delegate { Pc.Visible = true; });
+                            else Pc.Visible = true;
+                            break;
+                        case 7:
+                            string heartAdd = $"pictureBoxP{UserNumber.ToString()}Heart{data.Carry}";
+                            Pc = groupBox.Controls.Find(heartAdd, false).FirstOrDefault() as PictureBox;
+                            if (panel1.InvokeRequired) panel1.Invoke((MethodInvoker)delegate { Pc.Image = Image.FromFile(path+"Img\\love.png"); });
+                            else Pc.Image = Image.FromFile(path + "Img\\love.png");
 
                             break;
                     }
@@ -453,17 +494,28 @@ namespace KingOfExplosions
                     DataGame dataGame = data;
                     switch (dataGame.TypeProp)
                     {
-                        case 3:
+                        case 3:  //停加速
                             runningSpeedRatio = 1;
+                            groupBox = this.Controls.Find("groupBox" + UserNumber.ToString(), false).FirstOrDefault() as GroupBox;
+                            string heart = $"pictureBoxP{UserNumber}Shoe";
+                            Pc = FindControl(groupBox, heart) as PictureBox;
+                            if (panel1.InvokeRequired) panel1.Invoke((MethodInvoker)delegate { Pc.Visible = false; });
+                            else Pc.Visible = false;
                             break;
                         case 4:
-
+                            string Protect = $"pictureBoxP{UserNumber.ToString()}Protect";
+                            Pc = groupBox.Controls.Find(Protect, false).FirstOrDefault() as PictureBox;
+                            if (panel1.InvokeRequired) panel1.Invoke((MethodInvoker)delegate { Pc.Visible = false; });
+                            else Pc.Visible = false;
                             break;
-                        case 5:
+                        case 5:  //能動
                             walking = true;
                             break;
                         case 6:
-
+                            string attack = $"pictureBoxP{UserNumber.ToString()}Attack";
+                            Pc = groupBox.Controls.Find(attack, false).FirstOrDefault() as PictureBox;
+                            if (panel1.InvokeRequired) panel1.Invoke((MethodInvoker)delegate { Pc.Visible = false; });
+                            else Pc.Visible = false;
                             break;
                     }
                     break;
@@ -518,6 +570,10 @@ namespace KingOfExplosions
                                                                    //listBox1.Items.Add("Msg:" + Msg);
                     switch (St)                                    //依命令碼執行功能
                     {
+                        case "T":
+                            listBox1.Items.Add(Str);
+                            buildTerrain(Str);
+                            break;
                         case "J":
                             try
                             {
@@ -560,7 +616,27 @@ namespace KingOfExplosions
                             string heart = $"pictureBoxP{attack.UserNumber}Heart{attack.Heart}";
                             PictureBox Pc = FindControl(groupBox, heart) as PictureBox;
                             Pc.Image = Image.FromFile(path + "Img\\lovenull.png");
-
+                            break;
+                        case "O":
+                            walking = false;
+                            pictureBoxSelf.Visible = false;
+                            if (panel1.InvokeRequired)
+                            {
+                                panel1.Invoke((MethodInvoker) delegate
+                                {
+                                    PictureBox pictureBox = new PictureBox();
+                                    pictureBox.SizeMode = PictureBoxSizeMode.StretchImage;
+                                    pictureBox.SetBounds(0, 0, 500, 500);
+                                    pictureBox.Image = Image.FromFile(path + "Img\\gameover.png");
+                                    panel1.Controls.Add(pictureBox);
+                                    // 將 PictureBox 移到 Z 軸的最上層
+                                    pictureBox.BringToFront();
+                                });
+                            }
+                            else
+                            {
+                                
+                            }
                             break;
 
                     }
@@ -568,10 +644,36 @@ namespace KingOfExplosions
             }
         }
 
+        private void button3_Click(object sender, EventArgs e)
+        {
+            Control.CheckForIllegalCrossThreadCalls = false; //忽略跨執行緒操作的錯誤
+            String User;
+            User = "C";                            //使用者名稱
+            UserNumber = 3;
+            string IP = "127.0.0.1";                   //伺服器IP
+            int Port = int.Parse("2019");             //伺服器Port
+            try
+            {
+                IPEndPoint EP = new IPEndPoint(IPAddress.Parse(IP), Port);          //建立伺服器端點資訊
+                //建立TCP通訊物件
+                T = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                T.Connect(EP);           //連上Server的EP端點(類似撥號連線)
+                Th = new Thread(Listen); //建立監聽執行緒
+                Th.IsBackground = true;  //設定為背景執行緒
+                Th.Start();              //開始監聽
+                textBox1.Text = "C已連線伺服器！" + "\r\n";
+                Send("0" + UserNumber);        //隨即傳送自己的 UserName 給 Server
+            }
+            catch
+            {
+                textBox1.Text = "無法連上伺服器！" + "\r\n";  //連線失敗時顯示訊息
+            }
+            InitTmp(UserNumber, "3", "p2.png");
+        }
 
         private void Send(string Str)
         {
-            byte[] B = Encoding.Default.GetBytes(Str); //翻譯文字成Byte陣列
+            byte[] B = Encoding.Default.GetBytes(Str+"|"); //翻譯文字成Byte陣列
             try
             {
                 T.Send(B, 0, B.Length, SocketFlags.None);  //傳送訊息給伺服器

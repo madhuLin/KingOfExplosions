@@ -321,6 +321,9 @@ namespace KingOfExplosions.GameElement
                 case 6:
                     Pc.Image = Image.FromFile(path + "power.png");
                     break;
+                case 7:
+                    Pc.Image = Image.FromFile(path + "love.png");
+                    break;
             }
         }
     }

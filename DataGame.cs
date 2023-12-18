@@ -17,6 +17,7 @@ namespace KingOfExplosions
         public int numberBomb { get; set; }  //炸彈編號
         public String PicName { get; set; }
         public int TypeProp { get; set; }
+        public int Carry { get; set; }
 
         public DataGame(int userNumber, int type, int x, int y)
         {
