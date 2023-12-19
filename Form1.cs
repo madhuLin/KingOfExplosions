@@ -39,6 +39,7 @@ namespace KingOfExplosions
         PictureBox pictureBoxSelf;
         Dictionary<int, PictureBox> userPictureName = new Dictionary<int, PictureBox>();
         Dictionary<int, Bomb> mapBomb = new Dictionary<int, Bomb>();
+        
         private void InitTmp(int num, string user, string picname)
         {
             dataUser = new DataUser();
