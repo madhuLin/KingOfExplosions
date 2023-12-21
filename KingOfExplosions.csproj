@@ -109,6 +109,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Img\background.png" />
+    <None Include="Img\background1.png" />
     <Content Include="Img\banana.png" />
     <Content Include="Img\bom.png" />
     <Content Include="Img\box.png" />
