@@ -12,7 +12,7 @@ namespace KingOfExplosions
         public String User { get; set; }
         public String PicName { get; set; }
         public string Ip { get; set; }
-        public String Port { get; set; }
+        public int Port { get; set; }
 
     }
 }

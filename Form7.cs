@@ -23,9 +23,10 @@ namespace KingOfExplosions
 
         }
 
-        public int Port;
-        public string IP;
+        //public int Port;
+        //public string IP;
         public string User;
+        //public DataUser dataUser = new DataUser();
         Socket T;
         Thread Th;
         IPEndPoint EP;
@@ -37,7 +38,7 @@ namespace KingOfExplosions
         int invitenum;    //邀請人數
         List<string> pcchoose = new List<string>();        //已被選擇的圖片
         PictureBox Pc = new PictureBox();                //玩家選擇的圖片
-        DataUser dataUser = new DataUser();  //套用class
+        public DataUser dataUser = new DataUser();  //套用class
         bool character = false;       //沒有重複腳色
         bool characterc = false;       //沒有重複腳色
         List<DataUser> datauserlist = new List<DataUser>();  ////套用class的list
@@ -48,7 +49,7 @@ namespace KingOfExplosions
         {
             groupBox2.Visible = false;
             Control.CheckForIllegalCrossThreadCalls = false; //忽略跨執行緒操作的錯誤
-            EP = new IPEndPoint(IPAddress.Parse(IP), Port); //伺服器的連線端點資訊
+            EP = new IPEndPoint(IPAddress.Parse(dataUser.Ip), dataUser.Port); //伺服器的連線端點資訊
             T = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             T.Connect(EP);           //連上伺服器的端點EP(類似撥號給電話總機)
             Th = new Thread(Listen); //建立監聽執行緒
@@ -57,11 +58,11 @@ namespace KingOfExplosions
 
             //Thread myThread = new Thread(myRun);
             //myThread.Start();
+            User = dataUser.User;
+            Send("0" + dataUser.User);        //連線後隨即傳送自己的名稱給伺服器   
 
-            Send("0" + User);        //連線後隨即傳送自己的名稱給伺服器   
-
-            lbl_port.Text = "你的Port : " + Port;   //顯示玩家資料
-            lbl_ip.Text = "你的IP : " + IP;
+            lbl_port.Text = "你的Port : " + dataUser.Port;   //顯示玩家資料
+            lbl_ip.Text = "你的IP : " + dataUser.Ip;
             lbl_user.Text = "使用者 :      " + User;
         }
         protected override void OnFormClosing(FormClosingEventArgs e)
@@ -270,10 +271,8 @@ namespace KingOfExplosions
                                 playerID++;
                             }
                         }
-                        DataUser dataUser = new DataUser() { UserNumber = playerID, User = CC[0], PicName = CC[1], Ip = IP, Port = (Port - 1).ToString() };
-                        datauserlist.Add(dataUser);
-                        //datauserlist.Add(new DataUser() { UserNumber = playerID, User = CC[0], PicName = CC[1], Ip = IP, Port = (Port - 1).ToString() });
-                        //datauserlist.Add(new DataUser() { UserNumber = dataUser.UserNumber, User = dataUser.User, PicName = dataUser.PicName, Ip = IP, Port = (Port - 1).ToString() });
+                        DataUser dataUserTmp = new DataUser() { UserNumber = playerID, User = CC[0], PicName = CC[1], Ip = dataUser.Ip, Port = (dataUser.Port - 1) };
+                        datauserlist.Add(dataUserTmp);
                         break;
                     case "3":  //t玩家名稱重複
                         MessageBox.Show("玩家名稱重複！");
@@ -489,23 +488,32 @@ namespace KingOfExplosions
                 UserNumber = playerID;
                 btn_ready.Visible = false;
                 lbl_wait.Visible = true;
-                for (int i = 0; i < listpy.Count; i++)
-                {
-                    Thread.Sleep(100);
-                    Send("Y" + User + "," + "1" + "|" + listpy[i]);
-                }
-                if (chready.Count == invitenum)
-                {
-                    if (pcchoose.Count == invitenum)
-                    {
-                        for (int i = 0; i < listpy.Count; i++)
-                        {
-                            Thread.Sleep(100);
-                            Send("T" + User + "|" + listpy[i]);
-                        }
-                    }
+                //for (int i = 0; i < listpy.Count; i++)
+                //{
+                //    Thread.Sleep(100);
+                //    Send("Y" + User + "," + "1" + "|" + listpy[i]);
+                //}
+                //if (chready.Count == invitenum)
+                //{
+                //    if (pcchoose.Count == invitenum)
+                //    {
+                //        for (int i = 0; i < listpy.Count; i++)
+                //        {
+                //            Thread.Sleep(100);
+                //            Send("T" + User + "|" + listpy[i]);
+                //        }
+                //    }
 
+                //}
+                if (datauserlist.Count == invitenum)
+                {
+                    for (int i = 0; i < listpy.Count; i++)
+                    {
+                        Thread.Sleep(100);
+                        Send("T" + User + "|" + listpy[i]);
+                    }
                 }
+                
 
             }
 

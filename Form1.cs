@@ -161,7 +161,7 @@ namespace KingOfExplosions
                 {
                     dataUser = data;
                     InitSelf(data.UserNumber, data.User, data.PicName);
-                    ConnectServer(data.UserNumber, data.User, data.Ip, int.Parse(data.Port), data.PicName);
+                    ConnectServer(data.UserNumber, data.User, data.Ip, data.Port, data.PicName);
                 }
                 else
                 {
@@ -466,8 +466,8 @@ namespace KingOfExplosions
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Send("9" + UserNumber.ToString());//傳送自己的離線訊息給伺服器
-            T.Close();       //關閉網路通訊器
+            //Send("9" + UserNumber.ToString());//傳送自己的離線訊息給伺服器
+            //T.Close();       //關閉網路通訊器
             Application.DoEvents();
             //Application.Exit();
         }
@@ -583,44 +583,50 @@ namespace KingOfExplosions
                             break;
                         case "K":  //結束遊戲
                             listBox1.Items.Add("K" + Str);
-                            //string[] dies = Str.Split(' ');
-                            //dies.Reverse();
-                            //foreach(var die in dies)
-                            //{
-                            //    foreach(var data in ListDataUser)
-                            //    {
-                            //        if (data.UserNumber == int.Parse(die)) {
-                            //            ListDataUserRank.Add(data);
-                            //        }
-                            //    }
-                            //}
+                            string[] dies = Str.Split(' ');
+                            dies.Reverse();
+                            foreach (var die in dies)
+                            {
+                                foreach (var data in ListDataUser)
+                                {
+                                    if (data.UserNumber == int.Parse(die))
+                                    {
+                                        ListDataUserRank.Add(data);
+                                    }
+                                }
+                            }
 
-                            //if (this.InvokeRequired)
-                            //{
-                            //    this.Invoke((MethodInvoker)delegate
-                            //    {
-                            //        this.Visible = false;
-                            //    });
-                            //}
-                            //else
-                            //{
-                            //    this.Visible = false;
-                            //}
-                            //Form2 f2 = new Form2();
-                            //if (f2.InvokeRequired)
-                            //{
-                            //    f2.Invoke((MethodInvoker)delegate
-                            //    {
-                            //        f2.ListDataUserRank = this.ListDataUserRank;
-                            //        f2.ShowDialog();
-                            //    });
-                            //}
-                            //else
-                            //{
-                            //    f2.ListDataUserRank = this.ListDataUserRank;
-                            //    f2.ShowDialog();
-                            //}
-
+                            if (this.InvokeRequired)
+                            {
+                                this.Invoke((MethodInvoker)delegate
+                                {
+                                    Send("9" + UserNumber.ToString());//傳送自己的離線訊息給伺服器
+                                    T.Close();
+                                    this.Visible = false;
+                                    this.Close();
+                                });
+                            }
+                            else
+                            {
+                                Send("9" + UserNumber.ToString());//傳送自己的離線訊息給伺服器
+                                T.Close();
+                                this.Visible = false;
+                                this.Close();
+                            }
+                            Form2 f2 = new Form2();
+                            if (f2.InvokeRequired)
+                            {
+                                f2.Invoke((MethodInvoker)delegate
+                                {
+                                    f2.ListDataUserRank = this.ListDataUserRank;
+                                    f2.ShowDialog();
+                                });
+                            }
+                            else
+                            {
+                                f2.ListDataUserRank = this.ListDataUserRank;
+                                f2.ShowDialog();
+                            }
 
                             break;
 
@@ -632,7 +638,7 @@ namespace KingOfExplosions
         {
             try
             {
-                IPEndPoint EP = new IPEndPoint(IPAddress.Parse(dataUser.Ip), int.Parse(dataUser.Port));          //建立伺服器端點資訊
+                IPEndPoint EP = new IPEndPoint(IPAddress.Parse(dataUser.Ip), dataUser.Port);          //建立伺服器端點資訊
                 //建立TCP通訊物件
                 T = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 T.Connect(EP);           //連上Server的EP端點(類似撥號連線)

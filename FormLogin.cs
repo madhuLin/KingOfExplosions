@@ -44,10 +44,14 @@ namespace KingOfExplosions
                     Th = new Thread(Listen); //建立監聽執行緒
                     Th.IsBackground = true;  //設定為背景執行緒
                     Th.Start();              //開始監聽
-                    
-                    f2.IP = this.IP;         //將資料傳去form2
-                    f2.Port = this.Port;
-                    f2.User = this.User;
+                    DataUser data = new DataUser();
+                    data.Ip = this.IP;
+                    data.Port = this.Port;
+                    data.User = User;
+                    f2.dataUser = data;
+                    //f2.IP = this.IP;         //將資料傳去form2
+                    //f2.Port = this.Port;
+                    //f2.User = this.User;
 
                     if (this.InvokeRequired)
                     {
