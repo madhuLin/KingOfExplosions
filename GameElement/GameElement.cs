@@ -9,6 +9,8 @@ using System.Windows.Forms;
 
 namespace KingOfExplosions.GameElement
 {
+
+    //工具類
     public class Tool
     {
         private int V;
@@ -21,6 +23,8 @@ namespace KingOfExplosions.GameElement
         {
             this.str = str;
         }
+
+        //倒數計時工具
         public void reciprocal(int t)
         {
             V = t;
@@ -44,6 +48,8 @@ namespace KingOfExplosions.GameElement
 
             }
         }
+
+        //倒數結束事件
         protected virtual void OnExploded()
         {
             Exploded?.Invoke(this, EventArgs.Empty);
@@ -66,164 +72,79 @@ namespace KingOfExplosions.GameElement
     // 炸彈類
     public class Bomb : GameElement
     {
-        public Bomb(int x, int y, Panel panel)
+        public int pow;
+        public Bomb(int x, int y, int power)
         {
             path = path.Substring(0, path.IndexOf("bin")) + "img\\";
             X = x;
             Y = y;
             W = 40;
             H = 40;
+            pow = power;
             InitPic();
         }
 
-        private void InitPic()
+        private void InitPic()  //初始圖片
         {
             Pc = new PictureBox();
             Pc.SizeMode = PictureBoxSizeMode.StretchImage;
             Pc.BackColor = Color.Transparent;
             Pc.Image = Image.FromFile(path + "bom.png");
-            Pc.SetBounds(X, Y, W, H);
+
+            Pc.SetBounds(X - 3, Y - 3, W, H);
             Pc.BringToFront(); //移到上一層
         }
 
-        public void setIamge(string name) 
+        //設置圖片
+        public void setIamge()
         {
-            Pc.Image = Image.FromFile(path + name);
-            Pc.SetBounds(X - 40, Y - 40, 120, 120);
+            if (pow == 1)
+            {
+                Pc.Image = Image.FromFile(path + "explosion.png");
+                Pc.SetBounds(X - 50, Y - 50, 150, 150);
+            }
+            else // 3:5
+            {
+                Pc.Image = Image.FromFile(path + "explosion2.png");
+                Pc.SetBounds(X - 100, Y - 100, 235, 235);
+            }
+        }
+        // Implement IDisposable
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                // Dispose managed resources
+                if (Pc != null)
+                {
+                    Pc.Dispose();
+                    Pc = null;
+                }
+            }
+
+            // Dispose unmanaged resources
+            // (none in this example)
+
+        }
+
+        // Finalizer
+        ~Bomb()
+        {
+            Dispose(false);
         }
     }
-
-
-    //炸彈類
-    //public class Bomb : GameElement
-    //{
-    //    private int V;
-    //    private bool type = true;
-    //    private System.Threading.Timer timer;
-    //    private object lockObject = new object();
-    //    // 定义倒计时结束时触发的事件
-    //    public event EventHandler Exploded;
-    //    Panel panel;
-
-    //    public Bomb(int x, int y, Panel panel)
-    //    {
-    //        path = path.Substring(0, path.IndexOf("bin")) + "img\\";
-    //        X = x;
-    //        Y = y;
-    //        W = 40;
-    //        H = 40;
-    //        this.panel = panel;
-    //        InitPic();
-    //        reciprocal(25);
-    //    }
-
-    //    private void InitPic()
-    //    {
-    //        Pc = new PictureBox();
-    //        Pc.SizeMode = PictureBoxSizeMode.StretchImage;
-    //        Pc.BackColor = Color.Transparent;
-    //        Pc.Image = Image.FromFile(path + "bom.png");
-    //        Pc.SetBounds(X, Y, W, H);
-    //        Pc.BringToFront(); //移到上一層
-    //    }
-
-    //    private void reciprocal(int t)
-    //    {
-    //        V = t;
-    //        timer = new System.Threading.Timer(CountDown, null, 0, 100);
-    //    }
-
-    //    private void CountDown(object state)
-    //    {
-    //        lock (lockObject)
-    //        {
-    //            if (V == 0)
-    //            {
-    //                Console.WriteLine("V" + V.ToString());
-    //                timer.Change(Timeout.Infinite, Timeout.Infinite);
-    //                Explode();
-    //            }
-    //            else if (V > 0)
-    //            {
-    //                V -= 1;
-    //            }
-    //        }
-    //    }
-
-    //    public void Explode()
-    //    {
-    //        lock (lockObject)
-    //        {
-    //            if (type)
-    //            {
-    //                Pc.Image = Image.FromFile(path + "explosion.png");
-    //                Pc.Invoke((MethodInvoker)delegate
-    //                {
-    //                    Pc.SetBounds(X - 40, Y - 40, 120, 120);
-    //                });
-    //                OnExploded();
-    //                type = false;
-    //                reciprocal(5);
-    //            }
-    //            else
-    //            {
-    //                Pc.Invoke((MethodInvoker)delegate
-    //                {
-    //                    panel.Controls.Remove(Pc);
-    //                });
-    //                //OnExploded();
-    //                Pc.Image = null;
-    //                type = true;
-    //                return;
-    //            }
-    //            // 爆炸的邏輯
-    //            Console.WriteLine("Boom! Exploded!");
-    //        }
-    //        // 触发 Exploded 事件的方法
-    //    }
-    //    protected virtual void OnExploded()
-    //    {
-    //        Exploded?.Invoke(this, EventArgs.Empty);
-    //    }
-
-    //    private bool disposed = false;
-
-    //    // 实现 IDisposable 接口的 Dispose 方法
-    //    public void Dispose()
-    //    {
-    //        Dispose(true);
-    //        GC.SuppressFinalize(this);
-    //    }
-
-    //    // 实际的资源释放逻辑
-    //    protected virtual void Dispose(bool disposing)
-    //    {
-    //        if (!disposed)
-    //        {
-    //            if (disposing)
-    //            {
-    //                // 释放托管资源
-    //                if (timer != null)
-    //                {
-    //                    timer.Dispose();
-    //                    timer = null;
-    //                }
-    //            }
-
-    //            // 释放非托管资源
-
-    //            disposed = true;
-    //        }
-    //    }
-
-    //}
 
 
 
     // 箱子類
     public class Box : GameElement
     {
-        int[] Probability = {-1,3,6, 6,4,5};
 
         public Box(int x, int y, Panel panel)
         {
@@ -235,13 +156,6 @@ namespace KingOfExplosions.GameElement
             InitPic();
         }
 
-        public int getProp()
-        {
-            Random random = new Random();
-            int num = random.Next(Probability.Length);
-            Console.WriteLine(num);
-            return Probability[num];
-        }
         private void InitPic()
         {
             Pc = new PictureBox();
@@ -250,46 +164,77 @@ namespace KingOfExplosions.GameElement
             Pc.Image = Image.FromFile(path + "box.png");
             Pc.SetBounds(X, Y, W, H);
         }
-        public void Open()
+
+        // Implement IDisposable
+        public void Dispose()
         {
-            // 開啟箱子的邏輯
-            Console.WriteLine("Box opened!");
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                // Dispose managed resources
+                if (Pc != null)
+                {
+                    Pc.Dispose();
+                    Pc = null;
+                }
+            }
+
+            // Dispose unmanaged resources
+            // (none in this example)
+
+        }
+
+        // Finalizer
+        ~Box()
+        {
+            Dispose(false);
         }
     }
 
     // 障礙物類
     public class Obstacle : GameElement
     {
-        public Obstacle(int x, int y)
+        public Obstacle(int x, int y, int type)
         {
             path = path.Substring(0, path.IndexOf("bin")) + "img\\";
             X = x;
             Y = y;
             W = 50;
             H = 50;
-            InitPic();
+            InitPic(type);
         }
 
-        private void InitPic()
+        private void InitPic(int type)
         {
             Pc = new PictureBox();
             Pc.SizeMode = PictureBoxSizeMode.StretchImage;
             Pc.BackColor = Color.Transparent;
-            Pc.Image = Image.FromFile(path + "wall.png");
+            if (type == 1) Pc.Image = Image.FromFile(path + "wall.png");
+            else if (type == 2) Pc.Image = Image.FromFile(path + "wall1.png");
             Pc.SetBounds(X, Y, W, H);
         }
 
-        public void Block()
+        private void InitPic1(int type)
         {
-            // 障礙物的邏輯
-            Console.WriteLine("Obstacle blocking the way!");
+            Pc = new PictureBox();
+            Pc.SizeMode = PictureBoxSizeMode.StretchImage;
+            Pc.BackColor = Color.Transparent;
+            if (type == 1) Pc.Image = Image.FromFile(path + "wall2.png");
+            else if (type == 2) Pc.Image = Image.FromFile(path + "wall1.png");
+            Pc.SetBounds(X, Y, W, H);
         }
+
     }
 
+    //道具
     public class Prop : GameElement
     {
         public int type { get; set; }
-        public double ratio = 1.6;
         public Prop(int x, int y, int type)
         {
             path = path.Substring(0, path.IndexOf("bin")) + "img\\";
@@ -301,27 +246,27 @@ namespace KingOfExplosions.GameElement
             InitPic();
         }
 
-        private void InitPic() 
+        private void InitPic()
         {
             Pc = new PictureBox();
             Pc.SizeMode = PictureBoxSizeMode.StretchImage;
             Pc.BackColor = Color.Transparent;
             Pc.SetBounds(X, Y, W, H);
-            switch(type)
+            switch (type)
             {
-                case 3:
+                case 5:
                     Pc.Image = Image.FromFile(path + "run.png");
                     break;
-                case 4:
+                case 6:
                     Pc.Image = Image.FromFile(path + "Protect.png");
                     break;
-                case 5:
+                case 7:
                     Pc.Image = Image.FromFile(path + "banana.png");
                     break;
-                case 6:
+                case 8:
                     Pc.Image = Image.FromFile(path + "power.png");
                     break;
-                case 7:
+                case 9:
                     Pc.Image = Image.FromFile(path + "love.png");
                     break;
             }

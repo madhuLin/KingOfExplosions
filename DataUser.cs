@@ -13,5 +13,6 @@ namespace KingOfExplosions
         public String PicName { get; set; }
         public string Ip { get; set; }
         public String Port { get; set; }
+
     }
 }
